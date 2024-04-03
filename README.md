@@ -18,13 +18,13 @@ This project is currently highly dependent on [APlayer](https://aplayer.js.org)
 To play musics, You need an url that returns a list of songs with the format as shown below:
 ```json
 {
-    artist: "SONG_ARTIST",
-    cover: "SONG_COVER(Optional)",
-    lrc: "SONG_LYRIC_URL(Optional)",
-    name: "SONG_NAME",
-    pic: "SONG_PICTURE",
-    type: "SONG_TYPE(Optional)",
-    url: "AUDIO_FILE_URL"
+    "artist": "SONG_ARTIST",
+    "cover": "SONG_COVER(Optional)",
+    "lrc": "SONG_LYRIC_URL(Optional)",
+    "name": "SONG_NAME",
+    "pic": "SONG_PICTURE",
+    "type": "SONG_TYPE(Optional)",
+    "url": "AUDIO_FILE_URL"
 }
 ```
 You could use [Meting API](https://github.com/injahow/meting-api) which fully supports this feature while parsing 
