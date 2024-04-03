@@ -22,16 +22,19 @@
   <div class="aplayer_container" ref="aplayer_container"></div>
   <input type="checkbox" id="my_modal_6" class="modal-toggle" v-model="showModal" />
   <div class="modal" role="dialog">
-    <div class="modal-box text-left">
+    <div class="modal-box text-left w-2/3 max-w-5xl">
       <h3 class="font-bold text-lg">Import Playlist</h3>
       <p class="py-4">Please specify a url (api url) that returns a playlist JSON with aplayer song data format.</p>
-      <p>For more information about this, see How to use.</p>
+      <p>For more information about this, see
+        <a class="text-primary underline underline-offset-1" target="_blank"
+           href="https://github.com/sblzdddd/WBMPE?tab=readme-ov-file#how-to-use">How to use</a>.
+      </p>
       <p class="pt-2">Or click the "Example" button for a demo playlist url</p>
       <div class="join pt-4 w-full">
         <input :class="`grow input input-bordered join-item ${audioImporting?'input-disabled':''}`"
                v-model="playlistUrl" placeholder="Playlist Url"/>
         <button :class="`btn join-item btn-accent ${audioImporting?'btn-disabled':''}`"
-                @click="playlistUrl='https://v.iarc.top/?type=playlist&id=7331352483'">Example</button>
+                @click="playlistUrl='https://api.injahow.cn/meting/?type=playlist&id=7331352483'">Example</button>
       </div>
       <div class="modal-action">
         <button :class="`w-full btn btn-primary ${playlistUrl=='' || audioImporting ? 'btn-disabled':''}`"
@@ -99,6 +102,7 @@ function ImportMusic(url) {
       channel.postMessage({"action": "overview", "playlist": toRaw(PLAYLIST.value)})
       showModal.value = false
       audioImporting.value = false
+      console.log(jsonObject)
       initAplayer(PLAYLIST.value)
     }
   });

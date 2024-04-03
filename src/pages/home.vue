@@ -15,10 +15,10 @@ import { PlayIcon, ArrowTopRightOnSquareIcon } from "@heroicons/vue/24/outline";
         <PlayIcon class="h-6 w-6 text-black" />
         Launch Player
       </button>
-      <button class="btn btn-active btn-secondary rounded-full">
+      <a class="btn btn-active btn-secondary rounded-full" target="_blank" href="https://github.com/sblzdddd/WBMPE">
         <ArrowTopRightOnSquareIcon class="h-6 w-6 text-black" />
         Source Code
-      </button>
+      </a>
     </div>
   </div>
 </template>
