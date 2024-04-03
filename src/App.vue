@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import Footer from "@/components/Footer.vue";
-import {ref} from "vue";
-import { useRouter } from 'vue-router';
-const scroll = ref<{ scrollEl: HTMLDivElement; }>();
+import Footer from "./components/Footer.vue";
+// import {ref} from "vue";
+// import { useRouter } from 'vue-router';
 
-const router = useRouter();
+// const router = useRouter();
 
 const componentPages: string[] = ['Playlist', 'PlayerMain', 'Lyric', 'Player'];
 </script>
