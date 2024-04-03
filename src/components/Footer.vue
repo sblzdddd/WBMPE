@@ -6,7 +6,7 @@
   <footer class="z-[1] relative footer-container">
     <h1 class="footer-title">WBMPE</h1>
     <div class="credits">
-      <h2><b class="text-primary">Hand Crafted</b> by Donovan 22103</h2>
+      <h2>Made by <b class="text-primary">Donovan 22103</b></h2>
       <h2 class="flex">Built with&nbsp;
         <a class="flex items-center" href="https://vitejs.dev" target="_blank">
           <img src="@/assets/vite.svg" class="logo" alt="Vite logo" />&nbsp;Vite

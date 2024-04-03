@@ -1,19 +1,45 @@
 <template>
 <div class="w-100 h-screen p-4 flex flex-row gap-6">
-  <a class="btn btn-ghost btn-lg absolute float-left left-10 top-6" href="/">
-    <HomeIcon class="h-6 w-6 text-white" />&nbsp;
-    Back to Home
-  </a>
+  <div class="absolute float-left left-10 top-6 flex">
+    <a class="z-[1024] btn btn-ghost" href="/">
+      <HomeIcon class="h-6 w-6 text-white" />&nbsp;
+      Back to Home
+    </a>
+    <button class="btn btn-ghost" @click="showModal=true">
+      <ArrowDownOnSquareIcon class="h-6 w-6 text-white" />&nbsp;
+      Import Playlist
+    </button>
+  </div>
   <div class="min-w-[450px] aspect-[50/90] window_base">
-    <iframe src="/PlayerMain"></iframe>
+    <iframe src="/#/PlayerMain"></iframe>
   </div>
 <!--  <div class="grow window_base">-->
 <!--    <iframe src="/Lyric"></iframe>-->
 <!--  </div>-->
   <div class="grow min-w-[30vw] window_base">
-    <iframe src="/Playlist"></iframe>
+    <iframe src="/#/Playlist"></iframe>
   </div>
   <div class="aplayer_container" ref="aplayer_container"></div>
+  <input type="checkbox" id="my_modal_6" class="modal-toggle" v-model="showModal" />
+  <div class="modal" role="dialog">
+    <div class="modal-box text-left">
+      <h3 class="font-bold text-lg">Import Playlist</h3>
+      <p class="py-4">Please specify a url (api url) that returns a playlist JSON with aplayer song data format.</p>
+      <p>For more information about this, see How to use.</p>
+      <p class="pt-2">Or click the "Example" button for a demo playlist url</p>
+      <div class="join pt-4 w-full">
+        <input :class="`grow input input-bordered join-item ${audioImporting?'input-disabled':''}`"
+               v-model="playlistUrl" placeholder="Playlist Url"/>
+        <button :class="`btn join-item btn-accent ${audioImporting?'btn-disabled':''}`"
+                @click="playlistUrl='https://v.iarc.top/?type=playlist&id=7331352483'">Example</button>
+      </div>
+      <div class="modal-action">
+        <button :class="`w-full btn btn-primary ${playlistUrl=='' || audioImporting ? 'btn-disabled':''}`"
+                @click="ImportMusic(playlistUrl)">
+          <span :class="`loading ${audioImporting?'':'hidden'}`"></span>Import</button>
+      </div>
+    </div>
+  </div>
 </div>
 </template>
 
@@ -21,11 +47,16 @@
 // https://v.iarc.top/?type=playlist&id=7331352483
 
 import {onMounted, ref, toRaw, watch} from "vue";
-import { HomeIcon } from "@heroicons/vue/24/outline";
+import { HomeIcon, ArrowDownOnSquareIcon } from "@heroicons/vue/24/outline";
 
 
 const PLAYLIST = ref([])
 const aplayer_container = ref();
+const playlistUrl = ref("");
+
+const audioImporting = ref(false);
+const showModal = ref(true);
+
 let listLength = 0;
 
 let currentSong = 0;
@@ -55,29 +86,26 @@ function AJAX(method, url, callback) {
 
 const HQCover = true
 
-onMounted(() => {
-  AJAX('GET', "https://v.iarc.top/?type=playlist&id=7331352483", function(error, response, url) {
+function ImportMusic(url) {
+  PLAYLIST.value = [];
+  audioImporting.value = true
+  AJAX('GET', url, function(error, response, url) {
     if (error) {
       console.error(error);
     } else {
       const jsonObject = JSON.parse(response);
       listLength = jsonObject.length;
-      jsonObject.map(function(item) {
-        let i = item;
-        PLAYLIST.value.push(i);
-      });
+      PLAYLIST.value = jsonObject;
+      channel.postMessage({"action": "overview", "playlist": toRaw(PLAYLIST.value)})
+      showModal.value = false
+      audioImporting.value = false
+      initAplayer(PLAYLIST.value)
     }
   });
+}
+
+onMounted(() => {
 })
-
-watch(PLAYLIST.value, (newValue, oldValue) => {
-
-  console.log(PLAYLIST.value);
-  channel.postMessage({"action": "overview", "playlist": toRaw(PLAYLIST.value)})
-  if (PLAYLIST.value.length == listLength) {
-    initAplayer(PLAYLIST.value)
-  }
-});
 
 
 function initAplayer(data) {

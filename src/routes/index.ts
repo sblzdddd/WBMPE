@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 const Home = () => import('../pages/home.vue');
 const NotFound = () => import('../pages/not_found.vue');
 const Player = () => import('../pages/player.vue')
@@ -40,7 +40,7 @@ const router = createRouter({
             component: NotFound
         },
     ],
-    history: createWebHistory(),    // 拒绝 “#/”，从我做起
+    history: createWebHashHistory(),
 });
 
 export default router;

@@ -1,5 +1,5 @@
 <template>
-  <div class="playlist rounded-box w-screen h-screen flex flex-col gap-1 overflow-y-auto py-2">
+  <div :class="`${songData.length <= 0? 'skeleton': ''} playlist rounded-box w-screen h-screen flex flex-col gap-1 overflow-y-auto py-2`">
     <PlaylistItem v-for="song in songData" :key="songData.indexOf(song)" :index="songData.indexOf(song)" :songData="song"
                   @click="channel.postMessage({'action': 'switch', 'index': songData.indexOf(song)});
                           channel.postMessage({'action': 'test'});channel.postMessage({'action': 'play'});"
