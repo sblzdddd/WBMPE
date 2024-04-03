@@ -13,7 +13,7 @@
         </a>&nbsp;and&nbsp;
         <a class="flex items-center" href="https://vuejs.org/" target="_blank">
           <img src="@/assets/vue.svg" class="logo vue" alt="Vue logo" />&nbsp;Vue
-        </a>&nbsp;|&nbsp;<a target="_blank" href="">Source Code</a>
+        </a>&nbsp;|&nbsp;<a target="_blank" href="https://github.com/sblzdddd/WBMPE">Source Code</a>
       </h2>
     </div>
   </footer>
