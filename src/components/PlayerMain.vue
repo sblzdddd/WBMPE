@@ -1,43 +1,49 @@
 <template>
-    <div class="w-full h-full flex flex-col justify-center items-center gap-3 p-5">
-      <div class="cover-wrapper w-full rounded-box shadow-lg bg-base-300 cover aspect-square overflow-hidden">
-        <img :class="`cover w-full aspect-square ${coverLoaded? '':'cover_loading'}`" :src="coverUrl" @load="coverLoaded=true">
+    <div class="PlayerMain">
+      <div class="cover-wrapper">
+        <img :class="`cover ${coverLoaded? '':'cover_loading'}`" :src="coverUrl" @load="coverLoaded=true">
       </div>
-      <div class="song_basic_info text-left w-full flex flex-col px-1 items-stretch">
-        <h1 class="text-lg font-bold text-white">{{ songName }}</h1>
-        <a target="_blank" :href="`https://www.bing.com/search?q=${songArtist}`" class="text-sm text-gray-400 italic underline underline-offset-1">{{ songArtist }}</a>
-      </div>
-      <div class="progress-container w-full flex flex-col items-stretch justify-center px-1 pt-1 mb-0.5">
-        <div class="flex flex-row w-full justify-between mb-0.5">
-          <span class="from_start text-xs font-light text-gray-400">{{ currentLen }}</span>
-          <span class="from_end text-xs font-light text-gray-400">-{{ remainLen }}</span>
+      <div class="player-content">
+        <div class="song_basic_info">
+          <h1 class="song_name">{{ songName }}</h1>
+          <a target="_blank" :href="`https://www.bing.com/search?q=${songArtist}`" class="song_artist">{{ songArtist }}</a>
         </div>
-        <input type="range" min="0" max="1000" class="appkit_slider" ref="progress"
-               @mousedown="onProgressMouse(true)" @mouseup="onProgressMouse(false)"
-               @input="onProgressChange"  v-model="progressValue"/>
+        <div class="action-container">
+          <button class="btn btn-sm btn-ghost p-1">
+            <ArrowPathRoundedSquareIcon class="h-6 text-gray-400" />
+          </button>
+
+          <button class="btn btn-sm btn-ghost p-1 ml-[auto]" @click="skip(false)">
+            <BackwardIcon class="h-6 text-white" />
+          </button>
+          <button class="btn btn-sm btn-ghost p-1" @click="onPlayPauseClicked">
+            <PauseIcon :class="`h-6 text-white ${operatePlay? '':'hidden'}`" />
+            <PlayIcon :class="`h-6 text-white  ${operatePlay? 'hidden':''}`" />
+          </button>
+          <button class="btn btn-sm btn-ghost p-1 mr-[auto]" @click="skip(true)">
+            <ForwardIcon class="h-6 text-white" />
+          </button>
+
+          <button class="btn btn-sm btn-ghost p-1"
+                  @click="playlistOpened = !playlistOpened;
+                          emit('requestPlaylistOpen', playlistOpened)
+          ">
+            <QueueListIcon v-if="playlistOpened" class="h-6 text-gray-400" />
+            <QueueListIconOutline v-else class="h-6 text-gray-400" />
+          </button>
+        </div>
+        <div class="progress-container">
+          <span class="from_start">{{ currentLen }}</span>
+          <input type="range" min="0" max="1000" class="appkit_slider" ref="progress"
+                 @mousedown="onProgressMouse(true)" @mouseup="onProgressMouse(false)"
+                 @input="onProgressChange"  v-model="progressValue"/>
+          <span class="from_end">-{{ remainLen }}</span>
+        </div>
       </div>
-      <div class="action-container  w-full flex flex-row justify-between items-center gap-2">
-        <button class="btn btn-sm btn-ghost p-1">
-          <ArrowPathRoundedSquareIcon class="h-6 text-gray-400" />
-        </button>
-        <button class="btn btn-lg btn-circle btn-ghost ml-[auto]" @click="skip(false)">
-          <BackwardIcon class="h-10 text-white" />
-        </button>
-        <button class="btn btn-lg btn-circle btn-ghost" @click="onPlayPauseClicked">
-          <PauseIcon :class="`h-10 text-white ${operatePlay? '':'hidden'}`" />
-          <PlayIcon :class="`h-10 text-white  ${operatePlay? 'hidden':''}`" />
-        </button>
-        <button class="btn btn-lg btn-circle btn-ghost mr-[auto]" @click="skip(true)">
-          <ForwardIcon class="h-10 text-white" />
-        </button>
-        <button class="btn btn-sm btn-ghost p-1">
-          <HeartIconOutline class="h-6 text-gray-400" />
-          <HeartIcon class="h-6 text-white hidden" />
-        </button>
-      </div>
-      <div class="flex flex-row w-full justify-between items-center px-1 gap-3">
+
+      <div class="hidden flex flex-row w-full justify-between items-center px-1 gap-3">
         <SpeakerXMarkIcon class="h-6 text-gray-400" />
-        <input type="range" min="0" max="1000" value="700" class="appkit_slider" v-model="volumeValue" @change="onVolumeChange" />
+        <input type="range" min="0" max="1000" value="700" class="appkit_slider no-anim" v-model="volumeValue" @change="onVolumeChange" />
         <SpeakerWaveIcon class="h-6 text-gray-400" />
       </div>
     </div>
@@ -45,10 +51,14 @@
 <script setup lang="ts">
 import cover from "@/assets/cover_default.png"
 import { PauseIcon, PlayIcon, ForwardIcon, BackwardIcon,
-  ArrowPathRoundedSquareIcon, HeartIcon,
+  ArrowPathRoundedSquareIcon, QueueListIcon,
   SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/vue/24/solid";
-import { HeartIcon as HeartIconOutline } from "@heroicons/vue/24/outline";
+import { QueueListIcon as QueueListIconOutline } from "@heroicons/vue/24/outline"
 import { ref } from "vue";
+import {GetRealUrl} from "../libs/requests.ts";
+
+const emit = defineEmits(['requestPlaylistOpen', 'unhover'])
+const playlistOpened = ref(false);
 
 function formatSeconds(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -60,33 +70,6 @@ function formatSeconds(seconds: number): string {
 
 const coverLoaded = ref<boolean>(false);
 
-function AJAX(method, url, callback) {
-  const xhr = new XMLHttpRequest();
-
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === XMLHttpRequest.DONE) {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        callback(null, xhr.responseText, xhr.responseURL);
-      } else {
-        callback(new Error('Request failed with status: ' + xhr.status));
-      }
-    }
-  };
-
-  xhr.open(method, url, true);
-  xhr.send();
-}
-
-function GetRealUrl(url, callback) {
-  AJAX('HEAD', url, function(error, response, url) {
-    if (error) {
-      console.error(error);
-    } else {
-      callback(url.split("?")[0]);
-    }
-  })
-
-}
 
 const coverUrl = ref<string>(cover)
 
@@ -109,7 +92,7 @@ const totalLength = ref<number>(0);
 channel.onmessage = (e) => {
   const songData = e.data?.data;
   if (e.data?.action === "init") {
-    GetRealUrl(songData.pic, function(url) {
+    GetRealUrl(songData.pic, function(url:string) {
       coverUrl.value = url;
       coverLoaded.value = false;
     })
@@ -172,9 +155,56 @@ function onProgressChange() {
 function onVolumeChange() {
   channel.postMessage({"action": "volume", "volume": (volumeValue.value / 1000)})
 }
-
+defineExpose({playlistOpened})
 </script>
-<style>
+<style scoped lang="postcss">
+
+.PlayerMain {
+  @apply w-full h-full flex flex-col justify-center items-center gap-3;
+}
+
+.cover-wrapper {
+  @apply relative w-full rounded-md bg-base-300 cover aspect-square overflow-hidden;
+  box-shadow: 0 7px 12px -8px #000000a8;
+}
+.cover {
+  @apply w-[440px];
+  opacity: 1;
+  backdrop-filter: blur(0px);
+  transition: all 250ms ease;
+  z-index: 1;
+}
+.cover.cover_loading {
+  backdrop-filter: blur(50px);
+  opacity: 0;
+}
+
+.player-content {
+  @apply w-full flex flex-col justify-center items-center gap-3 px-2;
+}
+
+.song_basic_info {
+  @apply text-center w-full flex flex-col pt-5 gap-1 items-stretch;
+}
+
+.song_name {
+  @apply text-3xl font-bold text-white;
+}
+
+.song_artist {
+  @apply text-lg text-gray-400;
+}
+
+.action-container {
+  @apply w-full flex flex-row justify-between items-center gap-2 mb-1;
+}
+
+.progress-container {
+  @apply w-full flex flex-row items-center justify-center gap-4 px-1;
+}
+.from_start, .from_end {
+  @apply w-12 text-xs font-light text-gray-400;
+}
 .appkit_slider {
   @apply w-full rounded-full;
   appearance :none;
@@ -189,17 +219,7 @@ function onVolumeChange() {
   overflow: hidden;
 }
 .appkit_slider:hover {
-  @apply m-0 my-1 opacity-100 h-[24px];
-}
-.cover {
-  opacity: 1;
-  backdrop-filter: blur(0px);
-  transition: all 250ms ease;
-  z-index: 1;
-}
-.cover.cover_loading {
-  backdrop-filter: blur(50px);
-  opacity: 0;
+  @apply opacity-100;
 }
 .appkit_slider::-webkit-slider-thumb {
   -webkit-appearance: none;

@@ -3,13 +3,11 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,7 +19,8 @@ a:hover {
 }
 
 body {
-  @apply w-[100svw] h-[100svh];
+  background-color: #1e1f22;
+  @apply w-[100vw] h-[100svh];
   margin: 0;
   padding: 0;
 }
@@ -36,6 +35,29 @@ html, body, .app {
 }
 
 .window_base {
-  @apply p-0 rounded-box flex flex-col items-stretch;
+  @apply rounded-box flex flex-col items-stretch;
+  z-index: 1;
+}
+* {
+  scrollbar-color: auto!important;
+}
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
 }
 
+/* Track */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #ffffff30;
+  border-radius: 0.5rem;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #ffffff80;
+}

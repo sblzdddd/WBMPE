@@ -12,8 +12,6 @@ A replication of [AMLL](https://github.com/Steve-xmh/applemusic-like-lyrics).
 
 An Assignment's Submission of G2.ENR.CPU2.
 
-This project is currently highly dependent on [APlayer](https://aplayer.js.org)
-
 ## How to Use
 To play musics, You need an url that returns a list of songs with the format as shown below:
 ```json

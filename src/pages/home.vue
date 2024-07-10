@@ -1,61 +1,187 @@
-<script setup lang="ts">
-import { PlayIcon, ArrowTopRightOnSquareIcon } from "@heroicons/vue/24/outline";
-
-
-
-</script>
-
 <template>
-  <div class="home-container">
-    <video class="parallax-bg" src="@/assets/background_compressed.mp4" muted autoplay></video>
-    <h1 class="home-title">WBMPE</h1>
-    <p class="z-[1] text-lg font-bold">A simple media player online.</p>
-    <div class="z-[1] flex gap-5">
-      <button class="btn btn-accent rounded-full" @click="$router.push('Player')">
-        <PlayIcon class="h-6 w-6 text-black" />
-        Launch Player
-      </button>
-      <a class="btn btn-active btn-secondary rounded-full" target="_blank" href="https://github.com/sblzdddd/WBMPE">
-        <ArrowTopRightOnSquareIcon class="h-6 w-6 text-black" />
-        Source Code
+  <div class="w-100 h-screen flex flex-row justify-center items-center gap-6">
+    <div class="absolute float-left left-10 top-6 flex">
+      <a class="z-[1024] btn btn-ghost" href="/">
+        <HomeIcon class="h-6 w-6 text-white" />&nbsp;
+        Back to Home
       </a>
+      <button class="btn btn-ghost" @click="showModal=true">
+        <ArrowDownOnSquareIcon class="h-6 w-6 text-white" />&nbsp;
+        Import Music
+      </button>
     </div>
+
+    <div class="window_base">
+      <PlayerMain ref="playerMain"
+        @request-playlist-open="(val) => togglePlaylist(val)">
+      </PlayerMain>
+    </div>
+
+    <div :class="`window_base playlist_container ${playlistOpened? 'opened': ''}`">
+      <Playlist></Playlist>
+      <button class="btn btn-circle btn-ghost backdrop-blur-lg absolute right-2 top-7"
+      @click="playlistOpened = false;playerMain.playlistOpened=playlistOpened;">✕</button>
+
+    </div>
+    <audio ref="audio" id="audio" class="hidden"></audio>
+    <ImportModal :show-modal="showModal" :disabled="audioImporting"
+                 @request-import="(url:string) => ImportMusic(url)" />
+    <SDXDVisualizer :render-size="1.0" />
   </div>
 </template>
 
-<style scoped>
-video {
- filter: hue-rotate(256deg) blur(30px);
-  animation: hueShift 50s infinite;
+<script setup lang="ts">
+import {onMounted, ref, toRaw} from "vue";
+import { HomeIcon, ArrowDownOnSquareIcon } from "@heroicons/vue/24/outline";
+import PlayerMain from "../components/PlayerMain.vue";
+import Playlist from "../components/Playlist.vue";
+import ImportModal from "../components/ImportModal.vue";
+import {AJAX} from "../libs/requests.ts";
+import SDXDVisualizer from "@/components/SDXDVisualizer.vue";
+
+const PLAYLIST = ref([])
+const audio = ref<HTMLAudioElement>();
+const playerMain = ref();
+
+const showModal = ref(true);
+const audioImporting = ref(false);
+
+const playlistOpened = ref(false);
+
+const togglePlaylist = (val: boolean) => {
+  playlistOpened.value = val;
 }
-@keyframes hueShift {
-  from {
-    filter: hue-rotate(256deg) blur(30px);
+
+let listLength = 0;
+
+let currentSong = 0;
+
+const channel = new BroadcastChannel("WBMPE");
+
+const init = ref(false)
+
+let canPlay = false;
+
+function ImportMusic(url: string) {
+  PLAYLIST.value = [];
+  audioImporting.value = true
+  AJAX('GET', url, function(error, response) {
+    if (error) {
+      console.error(error);
+    } else {
+      const jsonObject = JSON.parse(response);
+      listLength = jsonObject.length;
+      PLAYLIST.value = jsonObject;
+      channel.postMessage({"action": "overview", "playlist": toRaw(PLAYLIST.value)})
+      showModal.value = false
+      audioImporting.value = false
+      console.log(jsonObject)
+      initPlayer()
+    }
+  });
+}
+
+onMounted(() => {
+
+})
+
+function initPlayer() {
+  if(init.value) return;
+  // currentSong = 0;
+  if(!audio.value) throw "ERROR: Audio component is null!";
+  initSong();
+
+  const a = audio.value;
+  a.crossOrigin = "anonymous";
+  a.addEventListener('durationchange', function () {
+    channel.postMessage({
+      action: "setLen",
+      length: a.duration
+    })
+  });
+  audio.value.addEventListener('timeupdate', function() {
+    channel.postMessage({
+      action: "timeUpdate",
+      time: a.currentTime
+    })
+  })
+}
+
+function initSong() {
+  let data = toRaw(PLAYLIST.value)[currentSong]
+  channel.postMessage({
+    action: "init",
+    data: data,
+    index: currentSong
+  })
+}
+
+channel.onmessage = (e) => {
+  if(!audio.value) throw "ERROR: Audio component is null!";
+  const ap: HTMLAudioElement = audio.value;
+  const isPlaying: boolean = !ap.paused;
+  if (e.data.action === "play") {
+    if(!canPlay) {
+      canPlay = true;
+      ap.src = PLAYLIST.value[currentSong].url;
+      deferredPlay(ap);
+    }
+    else ap.play();
   }
-  50% {
-    filter: hue-rotate(350deg) blur(30px);
+  if (e.data.action === "pause") {
+    ap.pause();
   }
-  to {
-    filter: hue-rotate(256deg) blur(30px);
+  if (e.data.action === "skip") {
+    if (e.data.forward) {
+      if (currentSong >= listLength - 1) {
+        currentSong = 0;
+      } else {
+        currentSong += 1;
+      }
+    } else {
+      if (currentSong <= 0) {
+        currentSong = listLength - 1
+      } else {
+        currentSong -= 1;
+      }
+    }
+    ap.src = PLAYLIST.value[currentSong].url;
+    initSong()
+    if(isPlaying) deferredPlay(ap)
+  }
+  if (e.data.action === "seek") {
+    ap.currentTime = e.data.position
+  }
+  if (e.data.action === "volume") {
+    // ap.volume(e.data.volume, true);
+  }
+  if (e.data.action === "switch") {
+    currentSong = e.data.index;
+    ap.src = PLAYLIST.value[currentSong].url;
+    initSong()
+    if(isPlaying) deferredPlay(ap)
   }
 }
-.home-container {
-  @apply w-screen h-screen flex flex-col justify-center items-center gap-5;
+
+const deferredPlay = (ap:HTMLAudioElement) => {
+  ap.addEventListener('loadeddata', () => {
+      ap.play().catch(error => {
+        // Handle potential errors during playback (e.g., user gesture required)
+        console.error("Error playing audio:", error);
+      });
+  });
 }
-.parallax-bg {
-  position: fixed;
-  z-index: 0;
-  height: 100vh;
-  width: 100vw;
-  object-fit: cover;
+
+</script>
+<style scoped lang="postcss">
+.playlist_container {
+  @apply min-w-[440px] h-screen pb-2 pt-6 absolute right-1 z-[100];
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 350ms ease;
 }
-.home-title {
-  @apply z-[10]
-  text-7xl md:text-8xl lg:text-[10rem] font-black;
-  background: linear-gradient(to right, #00fee3, #bd34fe);
-  color: #ffffffc0;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.playlist_container.opened {
+  opacity: 1;
+  transform: translateX(0%);
 }
 </style>
