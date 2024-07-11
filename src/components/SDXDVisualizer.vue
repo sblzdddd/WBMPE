@@ -1,5 +1,5 @@
 <template>
-  <div class="visualizer_root" style="position: absolute;top: 0;left: 0;right: 0;bottom: 0;z-index: 0;">
+  <div class="visualizer_root" style="position: absolute;top: 0;left: 0;right: 0;bottom: 0;z-index: 1;">
     <canvas ref="visualizerCanvas" width="800" height="400"></canvas>
     <div style="display:none;">
       <img id="Hold" :src="HoldTex" />
@@ -8,9 +8,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import HoldTex from "../assets/Hold.png"
 import HoldEndTex from "../assets/HoldEnd.png"
+import {settings} from "../libs/settings.ts";
 
 const props = withDefaults(
     defineProps<{
@@ -24,6 +25,7 @@ const props = withDefaults(
 const visualizerCanvas = ref<HTMLCanvasElement>();
 let visualizerCanvasElement: HTMLCanvasElement;
 let audio: HTMLAudioElement;
+let audioContext: any, audioSrc: any, barAnalyzer: any, gainNode: any;
 
 onMounted(() => {
 
@@ -50,15 +52,26 @@ onMounted(() => {
     visualizerCanvasElement.height = Math.floor(window.innerHeight * scale);
     visualizerCanvasElement.style.height = `${window.innerHeight}px`;
   }
-  window.onresize = resize;
+  window.addEventListener('resize', resize);
   resize();
 
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const audioSrc = audioContext.createMediaElementSource(audio);
-  const barAnalyzer = audioContext.createAnalyser();
+  audioContext = new (window.AudioContext)();
+  audioSrc = audioContext.createMediaElementSource(audio);
+  barAnalyzer = audioContext.createAnalyser();
+  gainNode = audioContext.createGain();
 
   audioSrc.connect(barAnalyzer);
-  barAnalyzer.connect(audioContext.destination);
+  audioSrc.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  gainNode.gain.value = 0.75;
+
+
+  const channel = new BroadcastChannel("WBMPE");
+  channel.onmessage = (e) => {
+    if (e.data.action === "volume") {
+      gainNode.gain.value = e.data?.volume;
+    }
+  }
 
   barAnalyzer.fftSize = 32;
   // maxDecibels = -10;
@@ -95,15 +108,17 @@ onMounted(() => {
     ctx.font = '100px cmdysj';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const text = `SulphurDXD™  Visualizer  1.14`;
+    const text = `SulphurDXD™  Visualizer`;
     const centerX = visualizerCanvasElement.width / 2;
     const centerY = visualizerCanvasElement.height / 2;
 
     ctx.save();
 
-    savedRotation += crit_val / 16384;
+
+    savedRotation += crit_val / 32000;
+    const rot = Math.sin(savedRotation) / 3
     ctx.translate(centerX, centerY);
-    ctx.rotate(savedRotation);
+    ctx.rotate(rot);
     ctx.scale(crit_val / 200, crit_val / 200);
 
     ctx.fillText(text, 0, 0);
@@ -113,11 +128,19 @@ onMounted(() => {
   }
 
   visualizerDraw();
+  watch(() => settings.visualizer, () => {
+    visualizerDraw();
+  })
 
   function visualizerDraw() {
     const cw = visualizerCanvasElement.width, ch = visualizerCanvasElement.height;
     const barWidth = (cw / 15);
     const bgWidth = (cw / bgBufferLength) * 2.5;
+
+    if(!settings.visualizer) {
+      ctx.clearRect(0, 0, cw, ch);
+      return;
+    }
 
     // 获取频率响度数据（取值 0 ~ 255）
     barAnalyzer.getByteFrequencyData(barBuffer);
@@ -132,58 +155,58 @@ onMounted(() => {
 
     // 绘制背景
     let bx = 0;
-    for(let i = 0; i < bgBufferLength; i++) {
-      const val = bgBuffer[i];
-      const a = val;
-      // 透明度对应响度
-      ctx.globalAlpha = Math.pow(a, 0.4) / 100;
-      // 整体增幅
-      ctx.globalAlpha *= (crit_val/100);
-      ctx.fillStyle = `rgba(255,255,255)`;
-      ctx.fillRect(bx, 0, bgWidth, ch);
-      bx += bgWidth;
+    if (settings.visualizerBG > 0) {
+      for(let i = 0; i < bgBufferLength; i++) {
+        const val = bgBuffer[i];
+        const a = val;
+        // 透明度对应响度
+        ctx.globalAlpha = Math.pow(a, 0.4) / 100;
+        // 整体增幅
+        ctx.globalAlpha *= (crit_val/25) * (settings.visualizerBG / 100);
+        ctx.fillStyle = `rgba(255,255,255)`;
+        ctx.fillRect(bx, 0, bgWidth, ch);
+        bx += bgWidth;
+      }
     }
 
-    let barHeight;
     let x = barWidth/4;
     drawWatermark(crit_val);
-    ctx.globalAlpha = 0.6;
 
     // 绘制长条
     for(let i = 0; i < 10; i++) {
+      ctx.globalAlpha = settings.visualizerBar / 100;
       const index = start + i * step
       const raw_value = (barBuffer[index]) / 255;
 
-      ctx.font = `${(5 * raw_value + 22) * props.renderSize}px cmdysj`;
-      ctx.fillText("Buffer Index:"+index, x, ch / 8);
-      ctx.fillText("Raw:"+raw_value.toFixed(2), x, ch / 6.5);
 
       const ix = i / barBufferLength;
 
       const adjustedIndex1 = Math.log2(ix + 1) + 0.5;
 
-      barHeight = raw_value * Math.pow(adjustedIndex1, 0.35);
+      let processedVal = raw_value * Math.pow(adjustedIndex1, 0.35);
 
-      ctx.fillText("log2(x+1):"+barHeight.toFixed(2), x, ch / 5.4);
+      processedVal *= processedVal * processedVal
 
-      barHeight *= barHeight * barHeight
-
-      ctx.fillText("^4:"+barHeight.toFixed(2), x, ch / 4.6);
-
-      barHeight *= ch / 3;
-      ctx.fillText("Height:"+barHeight.toFixed(2), x, ch / 4);
-
+      const barHeight = processedVal * ch / 3;
       const endHeight = barWidth * endRatio
+
       ctx.drawImage(Hold, x, ch - barHeight + endHeight, barWidth, ch / 2.5)
       ctx.drawImage(HoldEnd, x, ch - barHeight, barWidth, endHeight)
+
+      if(settings.debug) {
+        ctx.globalAlpha = 0.3;
+        ctx.font = `${(10 * processedVal + 20) * props.renderSize}px cmdysj`;
+        ctx.fillText("Buffer "+index, x + 5, ch / 1.09);
+        ctx.fillText("Raw: "+raw_value.toFixed(2), x + 5, ch / 1.054);
+        ctx.fillText("Post: "+processedVal.toFixed(2), x + 5, ch / 1.02);
+      }
+
       x += barWidth + barWidth/2;
     }
-
     requestAnimationFrame(visualizerDraw);
   }
 
 })
-
 </script>
 <style scoped>
 

@@ -6,7 +6,7 @@
   <div class="grow flex flex-col">
 
     <span class="name mr-[auto] font-medium">{{ songData.name }}</span>
-    <span class="artist mr-auto text-sm text-gray-500">{{ songData.artist }}</span>
+    <span class="artist mr-auto text-sm text-gray-400">{{ songData.artist }}</span>
 
   </div>
 </button>
