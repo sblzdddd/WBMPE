@@ -52,7 +52,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from "vue";
-import {settings} from "../libs/settings.ts";
+import {settings} from "@/libs/settings.ts";
 const settings_modal = ref()
 // const props = withDefaults(
 //     defineProps<{

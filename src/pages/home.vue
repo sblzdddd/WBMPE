@@ -36,17 +36,17 @@
 
 <script setup lang="ts">
 import {onMounted, ref, toRaw} from "vue";
-import { settings } from '../libs/settings'
+import { settings } from '@/libs/settings'
 import { HomeIcon, ArrowDownOnSquareIcon, Cog6ToothIcon } from "@heroicons/vue/24/outline";
-import PlayerMain from "../components/PlayerMain.vue";
-import Playlist from "../components/Playlist.vue";
-import ImportModal from "../components/ImportModal.vue";
-import {AJAX} from "../libs/requests.ts";
-import SDXDVisualizer from "../components/SDXDVisualizer.vue";
-import {deferredPlay, fadeIn} from "../libs/audio.ts";
-import Background from "../components/Background.vue";
-import Lyric from "../components/Lyric.vue";
-import SettingsModal from "../components/SettingsModal.vue";
+import PlayerMain from "@/components/PlayerMain.vue";
+import Playlist from "@/components/Playlist.vue";
+import ImportModal from "@/components/ImportModal.vue";
+import {AJAX} from "@/libs/requests.ts";
+import SDXDVisualizer from "@/components/SDXDVisualizer.vue";
+import {deferredPlay, fadeIn} from "@/libs/audio.ts";
+import Background from "@/components/Background.vue";
+import Lyric from "@/components/Lyric.vue";
+import SettingsModal from "@/components/SettingsModal.vue";
 
 interface SongData {
   url: string;

@@ -8,7 +8,7 @@
 
 </template>
 <script setup lang="ts">
-import {GetRealUrl} from "../libs/requests.ts";
+import {GetRealUrl} from "@/libs/requests.ts";
 
 const props = withDefaults(
     defineProps<{
@@ -19,7 +19,7 @@ const props = withDefaults(
     }
 )
 import {onMounted, ref} from "vue";
-import {settings} from "../libs/settings.ts";
+import {settings} from "@/libs/settings.ts";
 
 const coverImg = ref();
 const coverImgNew = ref();

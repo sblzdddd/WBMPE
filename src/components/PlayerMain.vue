@@ -57,7 +57,7 @@ import { PauseIcon, PlayIcon, ForwardIcon, BackwardIcon,
   SpeakerWaveIcon, SpeakerXMarkIcon } from "@heroicons/vue/24/solid";
 import { QueueListIcon as QueueListIconOutline } from "@heroicons/vue/24/outline"
 import { ref } from "vue";
-import {GetRealUrl} from "../libs/requests.ts";
+import {GetRealUrl} from "@/libs/requests.ts";
 
 const emit = defineEmits(['requestPlaylistOpen', 'unhover'])
 const playlistOpened = ref(false);

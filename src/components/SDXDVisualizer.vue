@@ -9,9 +9,9 @@
 </template>
 <script setup lang="ts">
 import {onMounted, ref, watch} from "vue";
-import HoldTex from "../assets/Hold.png"
-import HoldEndTex from "../assets/HoldEnd.png"
-import {settings} from "../libs/settings.ts";
+import HoldTex from "@/assets/Hold.png"
+import HoldEndTex from "@/assets/HoldEnd.png"
+import {settings} from "@/libs/settings.ts";
 
 const props = withDefaults(
     defineProps<{

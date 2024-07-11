@@ -14,7 +14,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import {fetchLrc, getCurrentLyric, type LyricData} from "../libs/lrc.ts";
+import {fetchLrc, getCurrentLyric, type LyricData} from "@/libs/lrc.ts";
 import {ref, watch} from "vue";
 
 const lyric = ref<LyricData[]>([]);
